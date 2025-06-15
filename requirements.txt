@@ -1,6 +1,52 @@
-# 安装FFmpeg（用于视频处理）
-sudo apt-get install ffmpeg
+#!/bin/bash
+# AudioSubtitleExtractor 依赖安装脚本
+
+echo "开始安装依赖..."
+
+# 检查操作系统类型
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Ubuntu/Debian
+    echo "检测到Linux系统，正在安装ffmpeg..."
+    sudo apt-get update
+    sudo apt-get install -y ffmpeg
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    echo "检测到macOS系统，正在安装ffmpeg..."
+    if ! command -v brew &> /dev/null; then
+        echo "Homebrew未安装，正在安装Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+    brew install ffmpeg
+else
+    echo "警告：无法自动安装ffmpeg，请手动安装。"
+    echo "Windows用户：使用Chocolatey (https://chocolatey.org/) 运行：choco install ffmpeg"
+    echo "macOS用户：使用Homebrew运行：brew install ffmpeg"
+    echo "Linux用户：使用包管理器运行：sudo apt-get install ffmpeg"
+fi
+
+# 创建并激活虚拟环境 (可选)
+echo "创建虚拟环境..."
+python3 -m venv venv
+source venv/bin/activate  # Linux/macOS
+# 若为Windows，使用：venv\Scripts\activate
 
 # 安装Python依赖
+echo "安装Python依赖..."
+pip install --upgrade pip
 pip install git+https://github.com/openai/whisper.git
 pip install opencc-python-reimplemented googletrans==4.0.0-rc1
+
+# 根据CUDA可用性安装PyTorch
+echo "检测CUDA环境..."
+if command -v nvcc &> /dev/null; then
+    nvcc --version
+    echo "检测到CUDA，安装GPU版本的PyTorch..."
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+else
+    echo "未检测到CUDA，安装CPU版本的PyTorch..."
+    pip install torch torchvision torchaudio
+fi
+
+echo "依赖安装完成！"
+echo "使用前请激活虚拟环境：source venv/bin/activate (Linux/macOS)"
+echo "或：venv\Scripts\activate (Windows)"
